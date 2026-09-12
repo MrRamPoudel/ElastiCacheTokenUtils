@@ -6,48 +6,42 @@ namespace ElastiCache.IAMElastiCacheTokenGenerator
 {
     public class IAMElastiCacheTokenGenerator
     {
-    private const string Action = "connect";
-    private const string ServiceName = "elasticache";
-    private const string UserParameter = "User";
-    private static readonly TimeSpan TokenExpiry = TimeSpan.FromMinutes(15);
+        private const string Action = "connect";
+        private const string ServiceName = "elasticache";
+        private const string UserParameter = "User";
+        private static readonly TimeSpan TokenExpiry = TimeSpan.FromMinutes(15);
 
-
-    private readonly IMemoryCache _memoryCache;
-
-    public IAMElastiCacheTokenGenerator(IMemoryCache memoryCache)
-    {
-        _memoryCache = memoryCache;
-    }
-    public static string GenerateToken(
-        string cacheName,
-        string userId,
-        RegionEndpoint regionEndpoint,
-        AwsCredentials awsCredentials)
-    {
-        var uri = new Uri($"http://{cacheName}/?Action={Action}&{UserParameter}={Uri.EscapeDataString(userId)}");
-
-        var request = new Amazon.Runtime.Internal.IRequest
+        public static async Task<string> GenerateTokenAsync(
+            string cacheName,
+            string userId,
+            RegionEndpoint regionEndpoint,
+            AWSCredentials awsCredentials)
         {
-            HttpMethod = "GET",
-            Endpoint = uri
-        };
+            var uri = new Uri($"http://{cacheName}/?Action={Action}&{UserParameter}={Uri.EscapeDataString(userId)}");
 
-        var parameters = new AWSSigV4Parameters
-        {
-            Credentials = credentials,
-            Region = region,
-            Service = ServiceName
-        };
+            var request = new AWSSigningRequest
+            {
+                HttpMethod = HttpMethod.Get,
+                RequestUri = uri
+            };
 
-        var result = await AWSSigV4Signer.PresignAsync(
-            request,
-            parameters,
-            TokenExpiry,
-            CancellationToken.None);
 
-        return result.Uri.ToString()
-            .Replace("http://", "", StringComparison.OrdinalIgnoreCase)
-            .Replace("https://", "", StringComparison.OrdinalIgnoreCase);
+            var parameters = new AWSSigV4Parameters()
+            {
+                Credentials = awsCredentials,
+                Region = regionEndpoint,
+                Service = ServiceName
+            };
+
+            var result = await AWSSigV4Signer.PresignAsync(
+                request,
+                parameters,
+                TokenExpiry,
+                CancellationToken.None);
+
+            return result.Uri.ToString()
+                .Replace("http://", "", StringComparison.OrdinalIgnoreCase)
+                .Replace("https://", "", StringComparison.OrdinalIgnoreCase);
+        }
     }
-}
 }

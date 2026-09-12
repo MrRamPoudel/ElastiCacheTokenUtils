@@ -1,0 +1,14 @@
+name: Llibrary CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  library:
+    uses: my-org/shared-workflows/.github/workflows/dotnet-library.yml@v1
+
+    permissions:
+      contents: write
+      packages: write
