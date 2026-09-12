@@ -7,7 +7,7 @@ on:
 
 jobs:
   library:
-    uses: MrRamPoudel/shared-workflows/.github/workflows/dotnet-library.yml@v1
+    uses: MrRamPoudel/shared-dotnet-library-pipeline/.github/workflows/parent-pipeline.yml@v1
 
     permissions:
       contents: write
