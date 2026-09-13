@@ -7,7 +7,7 @@ on:
 
 jobs:
   library:
-    uses: MrRamPoudel/shared-dotnet-library-pipeline/.github/workflows/parent-pipeline.yml@v1
+    uses: MrRamPoudel/shared-dotnet-library-pipeline/.github/workflows/parent-pipeline.yml@v2
     with:
       version-increment: patch
       dotnet-version: 10.0.400
