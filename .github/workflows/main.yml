@@ -8,7 +8,7 @@ on:
 
 jobs:
   library:
-    uses: MrRamPoudel/shared-dotnet-library-pipeline/.github/workflows/dotnet-library-pipeline.yml@v2
+    uses: MrRamPoudel/shared-dotnet-library-pipeline/.github/workflows/dotnet-library-pipeline.yml@v1
     with:
       version-increment: patch
       dotnet-version: 10.0.400
