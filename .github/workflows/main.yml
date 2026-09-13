@@ -1,0 +1,16 @@
+name: Llibrary CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  library:
+    uses: MrRamPoudel/shared-dotnet-library-pipeline/.github/workflows/parent-pipeline.yml@v2
+    with:
+      version-increment: patch
+      dotnet-version: 10.0.400
+    permissions:
+      contents: write
+      packages: write
