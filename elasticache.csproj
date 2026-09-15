@@ -13,6 +13,7 @@
     <PackageReference Include="AWSSDK.Core" Version="4.0.102.4" />
     <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.100.13" />
     <PackageReference Include="AWSSDK.ElastiCache" Version="4.0.100.13" />
+    <PackageReference Include="StackExchange.Redis" Version="3.2.1" />
   </ItemGroup>
 
 </Project>
