@@ -11,37 +11,58 @@ namespace ElastiCache.IAMElastiCacheTokenGenerator
         private const string UserParameter = "User";
         private static readonly TimeSpan TokenExpiry = TimeSpan.FromMinutes(15);
 
-        public static async Task<string> GenerateTokenAsync(
-            string cacheName,
-            string userId,
-            RegionEndpoint regionEndpoint,
-            AWSCredentials awsCredentials)
+        private readonly AWSCredentials _credentials;
+        private readonly RegionEndpoint _region;
+
+    public IAMElastiCacheTokenGenerator(
+        AWSCredentials credentials,
+        RegionEndpoint region)
+    {
+        _credentials = credentials;
+        _region = region;
+    } 
+    public async Task<string> GenerateTokenAsync(
+        string cacheName,
+        string userId,
+        TimeSpan lifetime,
+        CancellationToken cancellationToken = default)
+    {
+        var uri = new Uri(
+            $"http://{cacheName}/" +
+            $"?Action={Uri.EscapeDataString(Action)}" +
+            $"&User={Uri.EscapeDataString(userId)}");
+
+        var request = new AWSSigningRequest
         {
-            var uri = new Uri($"http://{cacheName}/?Action={Action}&{UserParameter}={Uri.EscapeDataString(userId)}");
+            HttpMethod = HttpMethod.Get,
+            RequestUri = uri
+        };
 
-            var request = new AWSSigningRequest
-            {
-                HttpMethod = HttpMethod.Get,
-                RequestUri = uri
-            };
+        var parameters = new AWSSigV4Parameters
+        {
+            Credentials = _credentials,
+            Region = _region,
+            Service = ServiceName
+        };
 
+        var result = await AWSSigV4Signer.PresignAsync(
+            request,
+            parameters,
+            lifetime,
+            cancellationToken);
 
-            var parameters = new AWSSigV4Parameters()
-            {
-                Credentials = awsCredentials,
-                Region = regionEndpoint,
-                Service = ServiceName
-            };
+        var token = result.Uri.ToString();
 
-            var result = await AWSSigV4Signer.PresignAsync(
-                request,
-                parameters,
-                TokenExpiry,
-                CancellationToken.None);
-
-            return result.Uri.ToString()
-                .Replace("http://", "", StringComparison.OrdinalIgnoreCase)
-                .Replace("https://", "", StringComparison.OrdinalIgnoreCase);
+        if (token.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+        {
+            token = token["http://".Length..];
         }
+        else if (token.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            token = token["https://".Length..];
+        }
+
+        return token;
+    }
     }
 }
