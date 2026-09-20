@@ -14,6 +14,8 @@ public sealed class ElastiCacheIamCredentialProvider
     private Task? _refreshLoop;
 
     private volatile ElastiCacheIamCredentials? _current;
+    private long _refreshVersion;
+    private int _disposeSignaled;
 
     public string UserName => _options.UserId;
 
@@ -50,13 +52,16 @@ public sealed class ElastiCacheIamCredentialProvider
     public async Task RefreshAsync(
         CancellationToken cancellationToken = default)
     {
+        var refreshVersion = Volatile.Read(ref _refreshVersion);
+
         await _refreshLock.WaitAsync(cancellationToken)
             .ConfigureAwait(false);
 
         try
         {
-            // Another caller may have refreshed while we were waiting.
-            if (IsCurrentTokenUsable())
+            // Concurrent callers share the refresh that completed while
+            // they were waiting for the lock.
+            if (refreshVersion != Volatile.Read(ref _refreshVersion))
                 return;
 
             var token = await _tokenGenerator.GenerateAsync(
@@ -72,25 +77,13 @@ public sealed class ElastiCacheIamCredentialProvider
                 _options.UserId,
                 token,
                 expiresAt);
+
+            Interlocked.Increment(ref _refreshVersion);
         }
         finally
         {
             _refreshLock.Release();
         }
-    }
-
-    private bool IsCurrentTokenUsable()
-    {
-        var current = _current;
-
-        if (current is null)
-            return false;
-
-        var refreshAt =
-            current.ExpiresAt -
-            _options.RefreshBeforeExpiry;
-
-        return DateTimeOffset.UtcNow < refreshAt;
     }
 
     private async Task RunRefreshLoopAsync(
@@ -156,6 +149,9 @@ public sealed class ElastiCacheIamCredentialProvider
 
     public async ValueTask DisposeAsync()
     {
+        if (Interlocked.Exchange(ref _disposeSignaled, 1) != 0)
+            return;
+
         _shutdown.Cancel();
 
         if (_refreshLoop is not null)

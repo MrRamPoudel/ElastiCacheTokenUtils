@@ -11,7 +11,7 @@ internal sealed class TestTokenGenerator : IElastiCacheIamTokenGenerator
         RegionEndpoint,
         bool,
         CancellationToken,
-        Task<string>> _handler;
+        Task<string>>? _handler;
 
     private int _callCount;
 
@@ -24,9 +24,7 @@ internal sealed class TestTokenGenerator : IElastiCacheIamTokenGenerator
             CancellationToken,
             Task<string>>? handler = null)
     {
-        _handler = handler ??
-            ((_, _, _, _, _) =>
-                Task.FromResult($"token-{Interlocked.Increment(ref _callCount)}"));
+        _handler = handler;
     }
 
     public int CallCount => Volatile.Read(ref _callCount);
@@ -38,17 +36,20 @@ internal sealed class TestTokenGenerator : IElastiCacheIamTokenGenerator
         bool isServerless,
         CancellationToken cancellationToken = default)
     {
-        return _handler(
+        var callCount = Interlocked.Increment(ref _callCount);
+
+        return _handler?.Invoke(
             cacheName,
             userId,
             region,
             isServerless,
-            cancellationToken);
+            cancellationToken)
+            ?? Task.FromResult($"token-{callCount}");
     }
 
     public Task<string> GenerateAsync(ElastiCacheIamOptions options, AWSCredentials credentials, CancellationToken cancellationToken = default)
     {
-        return _handler(
+        return GenerateAsync(
             options.CacheName,
             options.UserId,
             options.Region,

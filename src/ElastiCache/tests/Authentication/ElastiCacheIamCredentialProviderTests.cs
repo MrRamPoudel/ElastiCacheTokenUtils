@@ -70,7 +70,7 @@ public sealed class ElastiCacheIamCredentialProviderTests
     }
 
     [Fact]
-    public async Task RefreshAsync_WhenTokenIsFresh_PreservesCachedToken()
+    public async Task RefreshAsync_GeneratesNewToken()
     {
         var generator = new TestTokenGenerator();
         var provider = new ElastiCacheIamCredentialProvider(
@@ -84,8 +84,8 @@ public sealed class ElastiCacheIamCredentialProviderTests
 
         await provider.RefreshAsync();
 
-        Assert.Equal("token-1", provider.Password);
-        Assert.Equal(1, generator.CallCount);
+        Assert.Equal("token-2", provider.Password);
+        Assert.Equal(2, generator.CallCount);
 
         await provider.DisposeAsync();
     }
@@ -129,11 +129,12 @@ public sealed class ElastiCacheIamCredentialProviderTests
             .Select(_ => provider.RefreshAsync())
             .ToArray();
 
-        await callStarted.Task;
+        await callStarted.Task.WaitAsync(TimeSpan.FromSeconds(1));
 
         releaseCall.SetResult();
 
-        await Task.WhenAll(refreshTasks);
+        await Task.WhenAll(refreshTasks)
+            .WaitAsync(TimeSpan.FromSeconds(1));
 
         Assert.Equal(
             "refreshed-token",
@@ -201,33 +202,6 @@ public sealed class ElastiCacheIamCredentialProviderTests
 
         Assert.Throws<InvalidOperationException>(
             () => _ = provider.Password);
-
-        await provider.DisposeAsync();
-    }
-
-    [Fact]
-    public async Task RefreshAsync_WhenTokenIsStillFresh_DoesNotRegenerate()
-    {
-        var generator = new TestTokenGenerator();
-
-        var provider = new ElastiCacheIamCredentialProvider(
-            CreateOptions(
-                tokenLifetime: TimeSpan.FromMinutes(15),
-                refreshBeforeExpiry: TimeSpan.FromMinutes(3)),
-            credentials,
-            generator);
-
-        await provider.StartAsync();
-
-        await provider.RefreshAsync();
-
-        Assert.Equal(
-            1,
-            generator.CallCount);
-
-        Assert.Equal(
-            "token-1",
-            provider.Password);
 
         await provider.DisposeAsync();
     }
