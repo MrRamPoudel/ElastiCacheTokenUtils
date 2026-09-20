@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -6,13 +6,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>MrRamPoudel.AWSElastiCacheUtils</PackageId>
-   <RepositoryUrl>https://github.com/MrRamPoudel/ElastiCacheTokenUtils</RepositoryUrl>
+    <RepositoryUrl>https://github.com/MrRamPoudel/ElastiCacheTokenUtils</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="AWSSDK.Core" Version="4.0.102.4" />
-    <PackageReference Include="AWSSDK.SecurityToken" Version="4.0.100.13" />
     <PackageReference Include="StackExchange.Redis" Version="3.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="tests/**/*.cs" />
   </ItemGroup>
 
 </Project>
