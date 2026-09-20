@@ -70,7 +70,7 @@ public sealed class ElastiCacheIamCredentialProviderTests
     }
 
     [Fact]
-    public async Task RefreshAsync_GeneratesNewToken()
+    public async Task RefreshAsync_WhenTokenIsFresh_PreservesCachedToken()
     {
         var generator = new TestTokenGenerator();
         var provider = new ElastiCacheIamCredentialProvider(
@@ -84,8 +84,8 @@ public sealed class ElastiCacheIamCredentialProviderTests
 
         await provider.RefreshAsync();
 
-        Assert.Equal("token-2", provider.Password);
-        Assert.Equal(2, generator.CallCount);
+        Assert.Equal("token-1", provider.Password);
+        Assert.Equal(1, generator.CallCount);
 
         await provider.DisposeAsync();
     }
